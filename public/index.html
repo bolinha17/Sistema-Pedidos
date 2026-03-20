@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mini Checkout</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg:       #0e0b14;
+      --surface:  #16101f;
+      --surface2: #1e1630;
+      --surface3: #261e3c;
+      --accent:   #9b6dff;
+      --accent2:  #e67bba;
+      --rose:     #f472b6;
+      --success:  #4ade80;
+      --warn:     #fbbf24;
+      --error:    #f87171;
+      --text:     #ede9f6;
+      --muted:    #8b809e;
+      --border:   rgba(155,109,255,0.12);
+      --r:        12px;
+      --shadow:   0 4px 28px rgba(0,0,0,0.45);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+    /* ── Scrollbar ── */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--surface); }
+    ::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 3px; }
+
+    /* ── Header ── */
+    header {
+      background: linear-gradient(135deg, var(--surface) 0%, var(--surface2) 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 18px 32px;
+      display: flex; align-items: center; gap: 14px;
+      position: sticky; top: 0; z-index: 100;
+      backdrop-filter: blur(12px);
+    }
+    .logo {
+      width: 38px; height: 38px;
+      background: linear-gradient(135deg, var(--accent), var(--rose));
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; flex-shrink: 0;
+    }
+    header h1 { font-size: 1.25rem; font-weight: 700; }
+    header .sub { font-size: 0.8rem; color: var(--muted); margin-left: 4px; font-weight: 400; }
+    .header-right { margin-left: auto; display: flex; gap: 8px; }
+
+    /* ── Tab nav ── */
+    .tabs {
+      display: flex; gap: 4px;
+      background: var(--surface2);
+      border-bottom: 1px solid var(--border);
+      padding: 0 32px;
+      overflow-x: auto;
+    }
+    .tab {
+      padding: 12px 20px;
+      font-size: 0.85rem; font-weight: 600;
+      color: var(--muted);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: color 0.2s, border-color 0.2s;
+      white-space: nowrap;
+      background: none; border-top: none; border-left: none; border-right: none;
+      font-family: inherit;
+    }
+    .tab:hover  { color: var(--text); }
+    .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+    /* ── Layout ── */
+    .container { max-width: 1100px; margin: 0 auto; padding: 32px 24px 80px; }
+    .pane { display: none; animation: fadeIn 0.25s ease; }
+    .pane.active { display: block; }
+
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+    @media (max-width: 700px) { .grid2 { grid-template-columns: 1fr; } .tabs { padding: 0 12px; } .container { padding: 20px 12px; } }
+
+    /* ── Cards ── */
+    .card {
+      background: var(--surface);
+      border-radius: var(--r);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .card-header {
+      padding: 16px 20px 14px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 10px;
+    }
+    .card-header .ch-icon {
+      width: 30px; height: 30px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center; font-size: 14px;
+    }
+    .card-header h2 { font-size: 0.92rem; font-weight: 600; }
+    .card-body { padding: 18px 20px; }
+
+    /* ── Forms ── */
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    @media(max-width:700px) { .form-row { grid-template-columns: 1fr; } }
+    .form-group { margin-bottom: 12px; }
+    label { display: block; font-size: 0.73rem; color: var(--muted); margin-bottom: 5px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; }
+    input, select, textarea {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid rgba(155,109,255,0.18);
+      border-radius: 8px;
+      padding: 9px 12px;
+      color: var(--text);
+      font-family: inherit; font-size: 0.88rem;
+      outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(155,109,255,0.15); }
+    select option { background: var(--surface2); }
+
+    /* ── Buttons ── */
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+      padding: 9px 18px; border: none; border-radius: 8px;
+      font-family: inherit; font-size: 0.87rem; font-weight: 600;
+      cursor: pointer; transition: transform 0.15s, opacity 0.15s, box-shadow 0.15s;
+    }
+    .btn:hover { transform: translateY(-1px); opacity: 0.93; }
+    .btn:active { transform: translateY(0); }
+    .btn-full { width: 100%; margin-top: 4px; }
+    .btn-primary  { background: linear-gradient(135deg, var(--accent), #bd9bff); color: #fff; box-shadow: 0 2px 12px rgba(155,109,255,0.3); }
+    .btn-rose     { background: linear-gradient(135deg, var(--accent2), var(--rose)); color: #fff; box-shadow: 0 2px 12px rgba(230,123,186,0.3); }
+    .btn-success  { background: linear-gradient(135deg, #22c55e, var(--success)); color: #1a1a1a; }
+    .btn-danger   { background: linear-gradient(135deg, #ef4444, var(--error)); color: #fff; }
+    .btn-outline  { background: transparent; border: 1px solid var(--accent); color: var(--accent); }
+    .btn-ghost    { background: transparent; border: 1px solid var(--border); color: var(--muted); font-size: 0.78rem; padding: 5px 12px; }
+    .btn-sm       { padding: 5px 12px; font-size: 0.78rem; }
+
+    /* ── List items ── */
+    .list { list-style: none; }
+    .list-item {
+      background: var(--surface2);
+      border-radius: 8px; padding: 11px 14px; margin-bottom: 7px;
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+      animation: fadeIn 0.25s ease; border: 1px solid transparent;
+      transition: border-color 0.2s;
+    }
+    .list-item:hover { border-color: var(--border); }
+    .list-item .li-name  { font-weight: 500; font-size: 0.87rem; }
+    .list-item .li-sub   { font-size: 0.76rem; color: var(--muted); margin-top: 2px; }
+    .li-price  { color: var(--success); font-weight: 700; font-size: 0.88rem; white-space: nowrap; }
+    .li-actions { display: flex; gap: 6px; flex-shrink: 0; }
+
+    /* ── Badge ── */
+    .badge {
+      font-size: 0.68rem; font-weight: 700; padding: 2px 9px; border-radius: 20px;
+      letter-spacing: 0.06em; text-transform: uppercase;
+    }
+    .badge-open     { background: rgba(251,191,36,0.15);  color: var(--warn); }
+    .badge-done     { background: rgba(74,222,128,0.15);  color: var(--success); }
+    .badge-canceled { background: rgba(248,113,113,0.15); color: var(--error); }
+
+    /* ── Order cards ── */
+    .order-card {
+      background: var(--surface2);
+      border-radius: 10px; padding: 16px; margin-bottom: 14px;
+      border: 1px solid var(--border);
+      animation: fadeIn 0.25s ease;
+    }
+    .order-card:hover { border-color: rgba(155,109,255,0.25); }
+    .order-head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
+    .order-id   { font-weight: 700; font-size: 0.95rem; }
+    .order-client { font-size: 0.8rem; color: var(--accent2); }
+    .order-actions { margin-left: auto; display: flex; gap: 6px; flex-shrink: 0; }
+
+    .order-address {
+      font-size: 0.79rem; color: var(--muted); margin-bottom: 10px;
+      display: flex; align-items: center; gap: 5px;
+    }
+
+    .order-items { margin-bottom: 10px; }
+    .order-item  { font-size: 0.81rem; color: var(--muted); padding: 3px 0; }
+
+    .order-totals {
+      border-top: 1px solid rgba(255,255,255,0.05);
+      padding-top: 10px; margin-top: 4px;
+      display: flex; flex-direction: column; gap: 4px;
+    }
+    .total-row { display: flex; justify-content: space-between; font-size: 0.82rem; color: var(--muted); }
+    .total-row.main { color: var(--text); font-weight: 700; font-size: 0.95rem; }
+    .total-row .disc { color: var(--rose); }
+
+    .history-list { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+    .history-pill {
+      font-size: 0.7rem; color: var(--muted);
+      background: var(--surface3); border-radius: 6px; padding: 2px 8px;
+    }
+
+    .coupon-chip {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: 0.75rem; background: rgba(155,109,255,0.12); color: var(--accent);
+      border-radius: 6px; padding: 2px 8px; margin-left: auto;
+    }
+
+    /* ── Search/filter bar ── */
+    .filter-bar { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+    .filter-bar input, .filter-bar select { flex: 1; min-width: 140px; margin: 0; }
+
+    /* ── Section header ── */
+    .section-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+    .section-head h3 { font-size: 0.95rem; font-weight: 600; }
+
+    /* ── Empty state ── */
+    .empty { text-align: center; color: var(--muted); padding: 28px 0; font-size: 0.85rem; }
+
+    /* ── Toast ── */
+    #toast {
+      position: fixed; bottom: 20px; left: 50%;
+      transform: translateX(-50%) translateY(70px);
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; padding: 10px 22px;
+      font-size: 0.85rem; font-weight: 500;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+      transition: transform 0.28s ease; z-index: 1000;
+      max-width: 360px; text-align: center;
+    }
+    #toast.show { transform: translateX(-50%) translateY(0); }
+    #toast.ok  { border-color: var(--success); color: var(--success); }
+    #toast.err { border-color: var(--rose);    color: var(--rose); }
+
+    /* ── Animations ── */
+    @keyframes fadeIn { from { opacity:0; transform: translateY(6px); } to { opacity:1; transform:none; } }
+
+    /* ── Divider ── */
+    .divider { height: 1px; background: var(--border); margin: 16px 0; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">🛍️</div>
+  <h1>Mini Checkout <span class="sub">— Sistema de Pedidos</span></h1>
+  <div class="header-right">
+    <button class="btn btn-ghost btn-sm" onclick="recarregarTudo()">↺ Atualizar</button>
+  </div>
+</header>
+
+<!-- Tab bar -->
+<nav class="tabs">
+  <button class="tab active" data-tab="produtos" onclick="switchTab('produtos', this)">📦 Produtos</button>
+  <button class="tab" data-tab="clientes" onclick="switchTab('clientes', this)">👤 Clientes</button>
+  <button class="tab" data-tab="cupons" onclick="switchTab('cupons', this)">🎟️ Cupons</button>
+  <button class="tab" data-tab="pedidos" onclick="switchTab('pedidos', this)">📋 Pedidos</button>
+</nav>
+
+<div class="container">
+
+  <!-- ══════════════════════════════════════════════════════ PRODUTOS ══ -->
+  <div class="pane active" id="tab-produtos">
+    <div class="grid2">
+
+      <div class="card">
+        <div class="card-header">
+          <div class="ch-icon" style="background:rgba(155,109,255,0.15)">📦</div>
+          <h2>Cadastrar Produto</h2>
+        </div>
+        <div class="card-body">
+          <div class="form-group">
+            <label for="prod-nome">Nome</label>
+            <input id="prod-nome" type="text" placeholder="Ex: Caneca Térmica" />
+          </div>
+          <div class="form-group">
+            <label for="prod-preco">Preço (R$)</label>
+            <input id="prod-preco" type="number" min="0" step="0.01" placeholder="0.00" />
+          </div>
+          <button class="btn btn-primary btn-full" onclick="criarProduto()">+ Cadastrar Produto</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="ch-icon" style="background:rgba(230,123,186,0.12)">🏷️</div>
+          <h2>Produtos Cadastrados</h2>
+        </div>
+        <div class="card-body">
+          <div class="form-group" style="margin-bottom:14px">
+            <input id="busca-produto" type="text" placeholder="🔍 Buscar por nome..." oninput="buscarProdutos()" />
+          </div>
+          <ul class="list" id="lista-produtos"><li class="empty">Nenhum produto ainda.</li></ul>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════ CLIENTES ══ -->
+  <div class="pane" id="tab-clientes">
+    <div class="grid2">
+
+      <div class="card">
+        <div class="card-header">
+          <div class="ch-icon" style="background:rgba(155,109,255,0.15)">👤</div>
+          <h2>Cadastrar Cliente</h2>
+        </div>
+        <div class="card-body">
+          <div class="form-group">
+            <label for="cli-nome">Nome</label>
+            <input id="cli-nome" type="text" placeholder="Nome completo" />
+          </div>
+          <div class="form-group">
+            <label for="cli-email">E-mail</label>
+            <input id="cli-email" type="email" placeholder="exemplo@email.com" />
+          </div>
+          <div class="form-group">
+            <label for="cli-tel">Telefone (opcional)</label>
+            <input id="cli-tel" type="text" placeholder="(11) 99999-9999" />
+          </div>
+          <button class="btn btn-rose btn-full" onclick="criarCliente()">+ Cadastrar Cliente</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="ch-icon" style="background:rgba(244,114,182,0.12)">👥</div>
+          <h2>Clientes Cadastrados</h2>
+        </div>
+        <div class="card-body">
+          <ul class="list" id="lista-clientes"><li class="empty">Nenhum cliente ainda.</li></ul>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════ CUPONS ══ -->
+  <div class="pane" id="tab-cupons">
+    <div class="grid2">
+
+      <div class="card">
+        <div class="card-header">
+          <div class="ch-icon" style="background:rgba(251,191,36,0.12)">🎟️</div>
+          <h2>Criar Cupom</h2>
+        </div>
+        <div class="card-body">
+          <div class="form-group">
+            <label for="cup-codigo">Código</label>
+            <input id="cup-codigo" type="text" placeholder="Ex: CUPOM10" style="text-transform:uppercase" />
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="cup-tipo">Tipo</label>
+              <select id="cup-tipo">
+                <option value="PERCENTUAL">% Percentual</option>
+                <option value="FIXO">R$ Valor Fixo</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="cup-valor">Valor</label>
+              <input id="cup-valor" type="number" min="0.01" step="0.01" placeholder="10" />
+            </div>
+          </div>
+          <button class="btn btn-primary btn-full" onclick="criarCupom()">+ Criar Cupom</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="ch-icon" style="background:rgba(251,191,36,0.12)">✂️</div>
+          <h2>Cupons Disponíveis</h2>
+        </div>
+        <div class="card-body">
+          <ul class="list" id="lista-cupons"><li class="empty">Nenhum cupom ainda.</li></ul>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════ PEDIDOS ══ -->
+  <div class="pane" id="tab-pedidos">
+    <div class="grid2" style="margin-bottom:28px">
+
+      <!-- Criar pedido -->
+      <div class="card">
+        <div class="card-header">
+          <div class="ch-icon" style="background:rgba(155,109,255,0.15)">🧾</div>
+          <h2>Criar Pedido</h2>
+        </div>
+        <div class="card-body">
+          <div class="form-group">
+            <label for="ped-cliente">Cliente</label>
+            <select id="ped-cliente"><option value="">— Selecione —</option></select>
+          </div>
+          <div class="divider"></div>
+          <p style="font-size:0.76rem;color:var(--muted);margin-bottom:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em">📍 Endereço de Entrega</p>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="ped-rua">Rua</label>
+              <input id="ped-rua" type="text" placeholder="Rua das Flores" />
+            </div>
+            <div class="form-group">
+              <label for="ped-numero">Número</label>
+              <input id="ped-numero" type="text" placeholder="123" />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="ped-bairro">Bairro</label>
+              <input id="ped-bairro" type="text" placeholder="Centro" />
+            </div>
+            <div class="form-group">
+              <label for="ped-cidade">Cidade</label>
+              <input id="ped-cidade" type="text" placeholder="São Paulo" />
+            </div>
+          </div>
+          <button class="btn btn-primary btn-full" onclick="criarPedido()">+ Novo Pedido</button>
+        </div>
+      </div>
+
+      <!-- Adicionar item / cupom -->
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div class="card">
+          <div class="card-header">
+            <div class="ch-icon" style="background:rgba(74,222,128,0.12)">➕</div>
+            <h2>Adicionar Item</h2>
+          </div>
+          <div class="card-body">
+            <div class="form-group">
+              <label for="item-pedido">Pedido</label>
+              <select id="item-pedido"><option value="">— Pedido aberto —</option></select>
+            </div>
+            <div class="form-group">
+              <label for="item-produto">Produto</label>
+              <select id="item-produto"><option value="">— Produto —</option></select>
+            </div>
+            <div class="form-group">
+              <label for="item-qtd">Quantidade</label>
+              <input id="item-qtd" type="number" value="1" min="1" step="1" />
+            </div>
+            <button class="btn btn-success btn-full" onclick="adicionarItem()">Adicionar Item</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="ch-icon" style="background:rgba(251,191,36,0.12)">🎟️</div>
+            <h2>Aplicar Cupom</h2>
+          </div>
+          <div class="card-body">
+            <div class="form-group">
+              <label for="cup-pedido">Pedido</label>
+              <select id="cup-pedido"><option value="">— Pedido aberto —</option></select>
+            </div>
+            <div class="form-group">
+              <label for="cup-codigo-apply">Código do Cupom</label>
+              <input id="cup-codigo-apply" type="text" placeholder="CUPOM10" style="text-transform:uppercase" />
+            </div>
+            <button class="btn btn-outline btn-full" onclick="aplicarCupom()">Aplicar Cupom</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Filters + orders list -->
+    <div class="section-head">
+      <h3>Todos os Pedidos</h3>
+    </div>
+    <div class="filter-bar">
+      <select id="filtro-status" onchange="carregarPedidos()">
+        <option value="">Todos os status</option>
+        <option value="ABERTO">ABERTO</option>
+        <option value="FINALIZADO">FINALIZADO</option>
+        <option value="CANCELADO">CANCELADO</option>
+      </select>
+      <select id="filtro-cliente" onchange="carregarPedidos()">
+        <option value="">Todos os clientes</option>
+      </select>
+    </div>
+    <div id="lista-pedidos"><p class="empty">Nenhum pedido encontrado.</p></div>
+  </div>
+
+</div>
+
+<div id="toast"></div>
+
+<script>
+const API = '';
+
+// ── Toast ─────────────────────────────────────────────────────────────────
+function showToast(msg, type = 'ok') {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = `show ${type}`;
+  setTimeout(() => { t.className = ''; }, 3200);
+}
+
+// ── Tabs ──────────────────────────────────────────────────────────────────
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.pane').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab-' + name).classList.add('active');
+}
+
+// ── Escape HTML ───────────────────────────────────────────────────────────
+function esc(str) {
+  return String(str ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ═════════════════════════════════════════════════════════════════════════
+// PRODUTOS
+// ═════════════════════════════════════════════════════════════════════════
+async function carregarProdutos(nome = '') {
+  const url = nome ? `/produtos?nome=${encodeURIComponent(nome)}` : '/produtos';
+  const res = await fetch(url);
+  const json = await res.json();
+  const lista = document.getElementById('lista-produtos');
+  const selItem = document.getElementById('item-produto');
+  const saved = selItem.value;
+
+  selItem.innerHTML = '<option value="">— Produto —</option>';
+
+  if (!json.data?.length) {
+    lista.innerHTML = '<li class="empty">Nenhum produto ainda.</li>';
+    return;
+  }
+
+  lista.innerHTML = json.data.map(p => `
+    <li class="list-item">
+      <div>
+        <div class="li-name">${esc(p.nome)}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <span class="li-price">R$ ${Number(p.preco).toFixed(2)}</span>
+        <button class="btn btn-ghost btn-sm" onclick="deleteProduto(${p.id},'${esc(p.nome)}')">🗑</button>
+      </div>
+    </li>
+  `).join('');
+
+  json.data.forEach(p => {
+    const o = document.createElement('option');
+    o.value = p.id;
+    o.textContent = `${p.nome} — R$ ${Number(p.preco).toFixed(2)}`;
+    selItem.appendChild(o);
+  });
+  selItem.value = saved;
+}
+
+function buscarProdutos() {
+  const v = document.getElementById('busca-produto').value;
+  carregarProdutos(v);
+}
+
+async function criarProduto() {
+  const nome  = document.getElementById('prod-nome').value.trim();
+  const preco = parseFloat(document.getElementById('prod-preco').value);
+  if (!nome) { showToast('Informe o nome do produto.', 'err'); return; }
+  if (isNaN(preco) || preco < 0) { showToast('Preço inválido.', 'err'); return; }
+
+  const res  = await fetch('/produtos', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({nome,preco}) });
+  const json = await res.json();
+  if (json.sucesso) {
+    showToast(`Produto "${nome}" cadastrado!`);
+    document.getElementById('prod-nome').value = '';
+    document.getElementById('prod-preco').value = '';
+    carregarProdutos();
+  } else { showToast(json.erro, 'err'); }
+}
+
+async function deleteProduto(id, nome) {
+  if (!confirm(`Excluir "${nome}"?`)) return;
+  const res  = await fetch(`/produtos/${id}`, { method:'DELETE' });
+  const json = await res.json();
+  if (json.sucesso) { showToast('Produto excluído.'); carregarProdutos(); }
+  else showToast(json.erro, 'err');
+}
+
+// ═════════════════════════════════════════════════════════════════════════
+// CLIENTES
+// ═════════════════════════════════════════════════════════════════════════
+async function carregarClientes() {
+  const res  = await fetch('/clientes');
+  const json = await res.json();
+  const lista   = document.getElementById('lista-clientes');
+  const selPed  = document.getElementById('ped-cliente');
+  const selFil  = document.getElementById('filtro-cliente');
+  const savedPed = selPed.value;
+  const savedFil = selFil.value;
+
+  selPed.innerHTML = '<option value="">— Selecione —</option>';
+  selFil.innerHTML = '<option value="">Todos os clientes</option>';
+
+  if (!json.data?.length) {
+    lista.innerHTML = '<li class="empty">Nenhum cliente ainda.</li>';
+    return;
+  }
+
+  lista.innerHTML = json.data.map(c => `
+    <li class="list-item">
+      <div>
+        <div class="li-name">${esc(c.nome)}</div>
+        <div class="li-sub">${esc(c.email)}${c.telefone ? ' · ' + esc(c.telefone) : ''}</div>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="deleteCliente(${c.id},'${esc(c.nome)}')">🗑</button>
+    </li>
+  `).join('');
+
+  json.data.forEach(c => {
+    const o1 = new Option(`${c.nome}`, c.id);
+    const o2 = new Option(`${c.nome}`, c.id);
+    selPed.appendChild(o1);
+    selFil.appendChild(o2);
+  });
+  selPed.value = savedPed;
+  selFil.value = savedFil;
+}
+
+async function criarCliente() {
+  const nome  = document.getElementById('cli-nome').value.trim();
+  const email = document.getElementById('cli-email').value.trim();
+  const tel   = document.getElementById('cli-tel').value.trim();
+  if (!nome) { showToast('Informe o nome.', 'err'); return; }
+  if (!email.includes('@')) { showToast('E-mail inválido.', 'err'); return; }
+
+  const res  = await fetch('/clientes', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({nome,email,telefone:tel||undefined}) });
+  const json = await res.json();
+  if (json.sucesso) {
+    showToast(`Cliente "${nome}" cadastrado!`);
+    ['cli-nome','cli-email','cli-tel'].forEach(id => document.getElementById(id).value = '');
+    carregarClientes();
+  } else showToast(json.erro, 'err');
+}
+
+async function deleteCliente(id, nome) {
+  if (!confirm(`Excluir cliente "${nome}"?`)) return;
+  const res  = await fetch(`/clientes/${id}`, { method:'DELETE' });
+  const json = await res.json();
+  if (json.sucesso) { showToast('Cliente excluído.'); carregarClientes(); }
+  else showToast(json.erro, 'err');
+}
+
+// ═════════════════════════════════════════════════════════════════════════
+// CUPONS
+// ═════════════════════════════════════════════════════════════════════════
+async function carregarCupons() {
+  const res  = await fetch('/cupons');
+  const json = await res.json();
+  const lista = document.getElementById('lista-cupons');
+  if (!json.data?.length) { lista.innerHTML = '<li class="empty">Nenhum cupom ainda.</li>'; return; }
+
+  lista.innerHTML = json.data.map(c => `
+    <li class="list-item">
+      <div>
+        <div class="li-name">${esc(c.codigo)}</div>
+        <div class="li-sub">${c.tipo === 'PERCENTUAL' ? c.valor + '% de desconto' : 'R$ ' + Number(c.valor).toFixed(2) + ' de desconto'}</div>
+      </div>
+      <span class="badge" style="background:rgba(155,109,255,0.12);color:var(--accent)">${c.tipo}</span>
+    </li>
+  `).join('');
+}
+
+async function criarCupom() {
+  const codigo = document.getElementById('cup-codigo').value.trim().toUpperCase();
+  const tipo   = document.getElementById('cup-tipo').value;
+  const valor  = parseFloat(document.getElementById('cup-valor').value);
+  if (!codigo) { showToast('Informe o código.', 'err'); return; }
+  if (isNaN(valor) || valor <= 0) { showToast('Valor inválido.', 'err'); return; }
+
+  const res  = await fetch('/cupons', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({codigo,tipo,valor}) });
+  const json = await res.json();
+  if (json.sucesso) {
+    showToast(`Cupom ${codigo} criado!`);
+    document.getElementById('cup-codigo').value = '';
+    document.getElementById('cup-valor').value  = '';
+    carregarCupons();
+  } else showToast(json.erro, 'err');
+}
+
+// ═════════════════════════════════════════════════════════════════════════
+// PEDIDOS
+// ═════════════════════════════════════════════════════════════════════════
+async function carregarPedidos() {
+  const status     = document.getElementById('filtro-status').value;
+  const cliente_id = document.getElementById('filtro-cliente').value;
+
+  let url = '/pedidos?';
+  if (status)     url += `status=${encodeURIComponent(status)}&`;
+  if (cliente_id) url += `cliente_id=${encodeURIComponent(cliente_id)}&`;
+
+  const res  = await fetch(url);
+  const json = await res.json();
+  const el   = document.getElementById('lista-pedidos');
+
+  // Reset open-order selects
+  const selItem = document.getElementById('item-pedido');
+  const selCup  = document.getElementById('cup-pedido');
+  const sItem   = selItem.value;
+  const sCup    = selCup.value;
+  selItem.innerHTML = '<option value="">— Pedido aberto —</option>';
+  selCup.innerHTML  = '<option value="">— Pedido aberto —</option>';
+
+  if (!json.data?.length) { el.innerHTML = '<p class="empty">Nenhum pedido encontrado.</p>'; return; }
+
+  el.innerHTML = json.data.map(p => {
+    const badgeCls = p.status === 'ABERTO' ? 'badge-open' : p.status === 'FINALIZADO' ? 'badge-done' : 'badge-canceled';
+
+    const endStr = p.endereco?.cidade
+      ? `📍 ${esc(p.endereco.rua)}, ${esc(p.endereco.numero)} · ${esc(p.endereco.bairro)} · ${esc(p.endereco.cidade)}`
+      : '';
+
+    const itensHtml = p.itens?.length
+      ? p.itens.map(i => `<div class="order-item">• ${esc(i.produto_nome)} × ${i.quantidade} = R$ ${(i.preco_unitario * i.quantidade).toFixed(2)}</div>`).join('')
+      : '<div class="order-item" style="color:var(--muted)">Sem itens.</div>';
+
+    const cupomChip = p.cupom ? `<span class="coupon-chip">🎟 ${esc(p.cupom.codigo)}</span>` : '';
+
+    const histHtml = p.historico?.map(h =>
+      `<span class="history-pill">${esc(h.status)} ${h.alterado_em ? '·' + h.alterado_em.slice(11,16) : ''}</span>`
+    ).join('') || '';
+
+    const actBtns = p.status === 'ABERTO' ? `
+      <button class="btn btn-success btn-sm" onclick="finalizarPedido(${p.id})">✓ Finalizar</button>
+      <button class="btn btn-danger btn-sm"  onclick="cancelarPedido(${p.id})">✕ Cancelar</button>
+      <button class="btn btn-ghost btn-sm"   onclick="deletarPedido(${p.id})">🗑</button>
+    ` : `<button class="btn btn-ghost btn-sm" onclick="deletarPedido(${p.id})">🗑</button>`;
+
+    return `
+      <div class="order-card">
+        <div class="order-head">
+          <span class="order-id">Pedido #${p.id}</span>
+          <span class="badge ${badgeCls}">${p.status}</span>
+          ${p.cliente ? `<span class="order-client">👤 ${esc(p.cliente.nome)}</span>` : ''}
+          ${cupomChip}
+          <div class="order-actions">${actBtns}</div>
+        </div>
+        ${endStr ? `<div class="order-address">${endStr}</div>` : ''}
+        <div class="order-items">${itensHtml}</div>
+        <div class="order-totals">
+          <div class="total-row"><span>Subtotal</span><span>R$ ${Number(p.subtotal).toFixed(2)}</span></div>
+          ${p.desconto > 0 ? `<div class="total-row"><span>Desconto</span><span class="disc">- R$ ${Number(p.desconto).toFixed(2)}</span></div>` : ''}
+          <div class="total-row main"><span>Total</span><span>R$ ${Number(p.total).toFixed(2)}</span></div>
+        </div>
+        ${histHtml ? `<div class="history-list">${histHtml}</div>` : ''}
+      </div>
+    `;
+  }).join('');
+
+  json.data.filter(p => p.status === 'ABERTO').forEach(p => {
+    selItem.appendChild(new Option(`Pedido #${p.id} — ${p.cliente?.nome || ''}`, p.id));
+    selCup.appendChild(new Option(`Pedido #${p.id} — ${p.cliente?.nome || ''}`, p.id));
+  });
+  selItem.value = sItem;
+  selCup.value  = sCup;
+}
+
+async function criarPedido() {
+  const cliente_id = document.getElementById('ped-cliente').value;
+  const rua    = document.getElementById('ped-rua').value.trim();
+  const numero = document.getElementById('ped-numero').value.trim();
+  const bairro = document.getElementById('ped-bairro').value.trim();
+  const cidade = document.getElementById('ped-cidade').value.trim();
+
+  if (!cliente_id) { showToast('Selecione um cliente.', 'err'); return; }
+  if (!rua || !numero || !bairro || !cidade) { showToast('Preencha o endereço completo.', 'err'); return; }
+
+  const res  = await fetch('/pedidos', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({cliente_id:Number(cliente_id), rua, numero, bairro, cidade}) });
+  const json = await res.json();
+  if (json.sucesso) {
+    showToast(`Pedido #${json.data.id} criado!`);
+    ['ped-rua','ped-numero','ped-bairro','ped-cidade'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('ped-cliente').value = '';
+    carregarPedidos();
+  } else showToast(json.erro, 'err');
+}
+
+async function adicionarItem() {
+  const pedidoId  = document.getElementById('item-pedido').value;
+  const produtoId = document.getElementById('item-produto').value;
+  const qtd       = parseInt(document.getElementById('item-qtd').value, 10);
+  if (!pedidoId)  { showToast('Selecione um pedido.', 'err'); return; }
+  if (!produtoId) { showToast('Selecione um produto.', 'err'); return; }
+  if (!qtd || qtd <= 0) { showToast('Quantidade inválida.', 'err'); return; }
+
+  const res  = await fetch(`/pedidos/${pedidoId}/itens`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({produto_id:Number(produtoId), quantidade:qtd}) });
+  const json = await res.json();
+  if (json.sucesso) { showToast(`Item adicionado! Total: R$ ${json.data.total.toFixed(2)}`); carregarPedidos(); }
+  else showToast(json.erro, 'err');
+}
+
+async function aplicarCupom() {
+  const pedidoId = document.getElementById('cup-pedido').value;
+  const codigo   = document.getElementById('cup-codigo-apply').value.trim().toUpperCase();
+  if (!pedidoId) { showToast('Selecione um pedido.', 'err'); return; }
+  if (!codigo)   { showToast('Informe o código do cupom.', 'err'); return; }
+
+  const res  = await fetch(`/pedidos/${pedidoId}/cupom`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({codigo}) });
+  const json = await res.json();
+  if (json.sucesso) { showToast(`Cupom ${codigo} aplicado! Desconto: R$ ${json.data.desconto.toFixed(2)}`); carregarPedidos(); }
+  else showToast(json.erro, 'err');
+}
+
+async function finalizarPedido(id) {
+  const res  = await fetch(`/pedidos/${id}/finalizar`, { method:'POST' });
+  const json = await res.json();
+  if (json.sucesso) { showToast(`Pedido #${id} finalizado!`); carregarPedidos(); }
+  else showToast(json.erro, 'err');
+}
+
+async function cancelarPedido(id) {
+  if (!confirm(`Cancelar o Pedido #${id}?`)) return;
+  const res  = await fetch(`/pedidos/${id}/cancelar`, { method:'POST' });
+  const json = await res.json();
+  if (json.sucesso) { showToast(`Pedido #${id} cancelado.`); carregarPedidos(); }
+  else showToast(json.erro, 'err');
+}
+
+async function deletarPedido(id) {
+  if (!confirm(`Excluir Pedido #${id} permanentemente?`)) return;
+  const res  = await fetch(`/pedidos/${id}`, { method:'DELETE' });
+  const json = await res.json();
+  if (json.sucesso) { showToast(`Pedido #${id} excluído.`); carregarPedidos(); }
+  else showToast(json.erro, 'err');
+}
+
+// ═════════════════════════════════════════════════════════════════════════
+// INIT
+// ═════════════════════════════════════════════════════════════════════════
+function recarregarTudo() {
+  carregarProdutos();
+  carregarClientes();
+  carregarCupons();
+  carregarPedidos();
+}
+
+recarregarTudo();
+</script>
+</body>
+</html>
