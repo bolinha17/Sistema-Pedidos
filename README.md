@@ -15,7 +15,7 @@
 
 ```bash
 # 1. Entrar na pasta do projeto
-cd "Trabalho Quinta (Maria"
+cd "Trabalho Qualidade de Software"
 
 # 2. Instalar dependências (se ainda não instalou)
 npm install
