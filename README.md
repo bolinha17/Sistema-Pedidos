@@ -8,7 +8,7 @@
 ## 🚀 Como rodar o projeto
 
 ### Pré-requisitos
-- Node.js 18+
+- Node.js 
 - npm
 
 ### Instalação e execução
